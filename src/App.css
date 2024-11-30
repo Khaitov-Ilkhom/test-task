@@ -1,0 +1,16 @@
+.ant-menu-item {
+  background-color: transparent;
+}
+
+.ant-menu-item:has(.active) {
+  background-color: #53dfdb !important;
+  color: #fff;
+}
+
+.ant-menu-item {
+  background-color: transparent;
+}
+
+.ant-table-wrapper .ant-table-tbody>tr>td {
+  padding: 8px 14px !important;
+}
