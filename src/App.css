@@ -14,3 +14,13 @@
 .ant-table-wrapper .ant-table-tbody>tr>td {
   padding: 8px 14px !important;
 }
+
+.ant-pagination .ant-pagination-item-active {
+  border-color: #53dfdb !important;
+}
+
+.ant-pagination .ant-pagination-item-active a {
+  color: #fff !important;
+  background-color: #53dfdb !important;
+  border-radius: 5px;
+}
