@@ -30,7 +30,7 @@ const Login = () => {
     if (isSuccess) {
       message.success("Successfully logged")
       dispatch(signIn(data.data.token))
-      navigate("/")
+      navigate("/home")
     }
     if (isError) {
       message.error("Logged error")
@@ -100,7 +100,7 @@ const Login = () => {
                 Don’t have an account?{" "}
                 <Link
                     className="text-blue-600 hover:underline font-semibold"
-                    to="/auth/register"
+                    to="/register"
                 >
                   Sign Up
                 </Link>

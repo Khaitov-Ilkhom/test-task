@@ -1,13 +1,10 @@
 import {
-  useChangeManagerMutation,
   useCreateBranchMutation, useDeleteBranchMutation,
-  useGetAllBranchesQuery, useGetSingBranchQuery,
-  useUpdateBranchMutation
+  useGetAllBranchesQuery
 } from "../../../redux/api/companBranchApi.ts";
 import {
-  Button, Form, FormProps,
-  Input, message, Modal,
-  Popconfirm, PopconfirmProps,
+  Button, Form, FormProps, Input,
+  message, Modal, Popconfirm, PopconfirmProps,
   Select, Table, TableProps
 } from "antd";
 import {useEffect, useState} from "react";
@@ -15,6 +12,8 @@ import {Content} from "../../../types";
 import {useGetAllProfilesQuery} from "../../../redux/api/profileApi.ts";
 import {MdEdit, MdDelete} from "react-icons/md";
 import {ImUserPlus} from "react-icons/im";
+import Edit from "../../../components/edit/Edit.tsx";
+import SetManager from "../../../components/set-manager/SetManager.tsx";
 
 export type FieldTypeC = {
   name?: string,
@@ -26,21 +25,18 @@ const CompanyBranch = () => {
   const [form] = Form.useForm()
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
-  const {data, isFetching} = useGetAllBranchesQuery({page: currentPage, size: pageSize});
-
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+  const [modalOpen, setModalOpen] = useState<boolean>(false);
   const [branchId, setBranchId] = useState<string | null>(null);
+
+  const [managerModal, setManagerModal] = useState<boolean>(false);
   const [managerSetID, setManagerSetID] = useState<string | null>(null);
+
+  const {data, isFetching} = useGetAllBranchesQuery({page: currentPage, size: pageSize});
   const [createBranch, {isSuccess: createSuc, isError: createEr}] = useCreateBranchMutation()
-  const [editBranch, {isSuccess: editSuc, isError: editEr}] = useUpdateBranchMutation()
-  const {
-    data: singleBranch,
-    isSuccess: singleSuc,
-    isError: singleError
-  } = useGetSingBranchQuery({id: branchId}, {skip: !branchId});
   const [deleteBranch, {isSuccess: deleteSuc, isError: deleteEr}] = useDeleteBranchMutation()
   const {data: allUsers} = useGetAllProfilesQuery()
-  const [changeManager, {isSuccess: manSuc, isError: manEr}] = useChangeManagerMutation()
 
   const handleTableChange = (pagination: any): void => {
     setCurrentPage(pagination.current);
@@ -49,19 +45,11 @@ const CompanyBranch = () => {
 
   // submit form
   const onFinish: FormProps<FieldTypeC>["onFinish"] = (values) => {
-    if (branchId) {
-      editBranch({body: values, id: branchId})
-      console.log(values)
-    } else {
-      createBranch(values)
-    }
+    createBranch(values)
   };
   const onFinishFailed: FormProps<FieldTypeC>["onFinishFailed"] = (errorInfo) => {
     console.log("Failed:", errorInfo);
   };
-  const onFinesh: FormProps<FieldTypeC>["onFinish"] = (values) => {
-    changeManager({body: values, id: managerSetID})
-  }
 
   // modal management
   const showModal = () => {
@@ -78,20 +66,37 @@ const CompanyBranch = () => {
 
   // set manager
   const setManager = (item: Content) => {
-    setIsModalOpen(true);
+    setManagerModal(true);
     setManagerSetID(item.id);
   }
+  const managerOk = () => {
+    setManagerModal(false);
+    form.resetFields()
+  };
+  const managerCancel = () => {
+    setManagerModal(false);
+    form.resetFields();
+  };
 
+  // edit branch
   const editContract = (item: Content) => {
     setBranchId(item.id)
-    setIsModalOpen(true);
+    setModalOpen(true);
   }
+  const editOk = () => {
+    setModalOpen(false);
+    form.resetFields()
+  };
+  const onCancel = () => {
+    setModalOpen(false);
+    form.resetFields();
+  };
 
+  // deleting branch
   const confirm: PopconfirmProps['onConfirm'] = (item) => {
     // @ts-ignore
     deleteBranch({id: item.id});
   };
-
   const cancel: PopconfirmProps['onCancel'] = (e) => {
     console.log(e);
     message.error('No deleted branch');
@@ -144,29 +149,19 @@ const CompanyBranch = () => {
     }
   ];
 
-  // create and edit branch event
+  // create branch event
   useEffect(() => {
-    if (createSuc || editSuc) {
+    if (createSuc) {
       setIsModalOpen(false);
       form.resetFields();
-      message.success(createSuc ? "Successfully created branch" : "Successfully edited branch");
+      message.success("Successfully created branch");
     }
-    if (createEr || editEr) {
+    if (createEr) {
       setIsModalOpen(false);
       form.resetFields();
-      message.error(createEr ? "Error creating branch" : "Error editing branch");
+      message.error("Error creating branch");
     }
-  }, [createSuc, createEr, editSuc, editEr, form]);
-
-  // single branch event
-  useEffect(() => {
-    if (singleSuc) {
-      form.setFieldsValue({...singleBranch?.data,});
-    }
-    if (singleError) {
-      message.error("Error fetching data");
-    }
-  }, [singleSuc, singleError, singleBranch, form]);
+  }, [createSuc, createEr, form]);
 
   // delete event
   useEffect(() => {
@@ -178,20 +173,6 @@ const CompanyBranch = () => {
     }
   }, [deleteSuc, deleteEr]);
 
-  // set manager id
-  useEffect(() => {
-    if (manSuc) {
-      setIsModalOpen(false);
-      form.resetFields();
-      message.success("Manager successfully joined the branch");
-    }
-    if (manEr) {
-      setIsModalOpen(false);
-      form.resetFields();
-      message.error("Adding a manager to the branch failed.");
-    }
-  }, [manEr, manSuc]);
-
   return (
       <div>
         <div className="pb-3">
@@ -200,12 +181,10 @@ const CompanyBranch = () => {
         </div>
 
         <Table<Content>
-            columns={columns}
+            columns={columns} loading={isFetching}
             dataSource={data?.data?.content?.map((item) => ({key: item.id, ...item}))}
-            loading={isFetching}
             pagination={{
-              current: currentPage,
-              pageSize,
+              current: currentPage, pageSize,
               total: data?.data?.totalElements,
               showSizeChanger: true,
               pageSizeOptions: ['10', '20', '50', '100'],
@@ -213,56 +192,42 @@ const CompanyBranch = () => {
             onChange={handleTableChange}
         />
 
-        <Modal title="Branches modal" open={isModalOpen} onOk={handleOk} onCancel={handleCancel} maskClosable={false}
-               footer={null} forceRender={true}>
-
+        <Modal title="Create Branches modal" open={isModalOpen} onOk={handleOk} onCancel={handleCancel}
+               maskClosable={false} footer={null} forceRender={true}
+        >
           <Form
               form={form}
-              onFinish={managerSetID !== null ? onFinesh : onFinish}
+              onFinish={onFinish}
               onFinishFailed={onFinishFailed}
               layout="vertical"
           >
-            {managerSetID !== null ? (
-                <Form.Item
-                    label="Select manager"
-                    name="managerId"
-                    rules={[{required: true, message: 'Please select a manager!'}]}
-                    className="mb-2"
-                >
-                  <Select
-                      size="large" options={allUsers?.map(user => ({value: user.id, label: user.name}))}
-                  />
-                </Form.Item>
-            ) : (
-                <>
-                  <Form.Item
-                      label="Name"
-                      name="name"
-                      rules={[{required: true, message: 'Please input branch name!'}]}
-                      className="mb-2"
-                  >
-                    <Input placeholder="Name" className="py-1.5 px-4 !border-gray-300 rounded-lg text-[16px]"/>
-                  </Form.Item>
-                  <Form.Item
-                      label="Address"
-                      name="address"
-                      rules={[{required: true, message: 'Please input branch address!'}]}
-                      className="mb-2"
-                  >
-                    <Input placeholder="Address" className="py-1.5 px-4 !border-gray-300 rounded-lg text-[16px]"/>
-                  </Form.Item>
-                  <Form.Item
-                      label="Select manager"
-                      name="managerId"
-                      className="mb-2"
-                  >
-                    <Select
-                        placeholder="Select manager" size="large"
-                        options={allUsers?.map(user => ({value: user.id, label: user.name}))}
-                    />
-                  </Form.Item>
-                </>
-            )}
+            <Form.Item
+                label="Name"
+                name="name"
+                rules={[{required: true, message: 'Please input branch name!'}]}
+                className="mb-2"
+            >
+              <Input placeholder="Name" className="py-1.5 px-4 !border-gray-300 rounded-lg text-[16px]"/>
+            </Form.Item>
+            <Form.Item
+                label="Address"
+                name="address"
+                rules={[{required: true, message: 'Please input branch address!'}]}
+                className="mb-2"
+            >
+              <Input placeholder="Address" className="py-1.5 px-4 !border-gray-300 rounded-lg text-[16px]"/>
+            </Form.Item>
+            <Form.Item
+                label="Select manager"
+                name="managerId"
+                className="mb-2"
+            >
+              <Select
+                  placeholder="Select manager" size="large"
+                  options={allUsers?.map(user => ({value: user.id, label: user.name}))}
+              />
+            </Form.Item>
+
             <div className="w-full flex justify-end max-h-[50px] mt-4">
               <Form.Item>
                 <Button
@@ -274,9 +239,17 @@ const CompanyBranch = () => {
               </Form.Item>
             </div>
           </Form>
-
         </Modal>
 
+        <Modal title="Edit Branch modal" open={modalOpen} onOk={editOk} onCancel={onCancel}
+               maskClosable={false} footer={null} forceRender={true}>
+          <Edit branchId={branchId} setModalOpen={setModalOpen}/>
+        </Modal>
+
+        <Modal title="Set Manager modal" open={managerModal} onOk={managerOk} onCancel={managerCancel}
+               maskClosable={false} footer={null} forceRender={true}>
+          <SetManager managerSetID={managerSetID} setManagerModal={setManagerModal}/>
+        </Modal>
       </div>
   )
 }

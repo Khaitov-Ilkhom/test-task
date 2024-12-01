@@ -105,7 +105,7 @@ export interface EditBranch {
 // edit branch form
 export interface EditBranchForm {
   body: FieldTypeC,
-  id: string,
+  id: string | null,
 }
 
 // single branch
