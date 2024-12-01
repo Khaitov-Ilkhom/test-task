@@ -5,16 +5,10 @@ import {
   useUpdateBranchMutation
 } from "../../../redux/api/companBranchApi.ts";
 import {
-  Button,
-  Form,
-  FormProps,
-  Input,
-  message,
-  Modal,
-  Popover,
-  Select,
-  Table,
-  TableProps
+  Button, Form, FormProps,
+  Input, message, Modal,
+  Popconfirm, PopconfirmProps,
+  Select, Table, TableProps
 } from "antd";
 import {useEffect, useState} from "react";
 import {Content} from "../../../types";
@@ -37,7 +31,6 @@ const CompanyBranch = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [branchId, setBranchId] = useState<string | null>(null);
   const [managerSetID, setManagerSetID] = useState<string | null>(null);
-  const [deletId, setDeletId] = useState<string | null>(null);
   const [createBranch, {isSuccess: createSuc, isError: createEr}] = useCreateBranchMutation()
   const [editBranch, {isSuccess: editSuc, isError: editEr}] = useUpdateBranchMutation()
   const {
@@ -89,23 +82,20 @@ const CompanyBranch = () => {
     setManagerSetID(item.id);
   }
 
-  const deleting = () => {
-    deleteBranch({id: deletId})
-  }
-
   const editContract = (item: Content) => {
     setBranchId(item.id)
     setIsModalOpen(true);
   }
 
-  const content = (
-      <div className="w-full flex justify-around items-center gap-3">
-        <button className="bg-amber-400 text-black rounded-lg px-3 py-1"
-                onClick={() => message.error("No deleted branch")}>No
-        </button>
-        <button className="bg-red-500 text-black rounded-lg px-3 py-1" onClick={deleting}>Yes</button>
-      </div>
-  );
+  const confirm: PopconfirmProps['onConfirm'] = (item) => {
+    // @ts-ignore
+    deleteBranch({id: item.id});
+  };
+
+  const cancel: PopconfirmProps['onCancel'] = (e) => {
+    console.log(e);
+    message.error('No deleted branch');
+  };
 
   const columns: TableProps<Content>['columns'] = [
     {
@@ -137,9 +127,16 @@ const CompanyBranch = () => {
           <div className="w-full flex justify-start items-center gap-2">
             <Button className="font-semibold !bg-amber-400 border-none !text-black"
                     onClick={() => editContract(item)}><MdEdit/>Edit</Button>
-            <Popover content={content} title="Confirm deleting" trigger="click">
-              <Button className="font-semibold !bg-red-500 border-none !text-black" onClick={() => setDeletId(item.id)}><MdDelete/>Delete</Button>
-            </Popover>
+            <Popconfirm
+                title="Delete the branch"
+                description="Are you sure to delete this branch?"
+                onConfirm={() => confirm(item)}
+                onCancel={cancel}
+                okText="Yes"
+                cancelText="No"
+            >
+              <Button className="font-semibold !bg-red-500 border-none !text-black"><MdDelete/>Delete</Button>
+            </Popconfirm>
             <Button className="font-semibold !bg-green-400 border-none !text-black"
                     onClick={() => setManager(item)}><ImUserPlus/>Manager</Button>
           </div>

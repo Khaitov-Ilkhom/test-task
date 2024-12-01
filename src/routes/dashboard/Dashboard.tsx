@@ -22,7 +22,7 @@ const Dashboard = () => {
                   onClick={() => setCollapsed(!collapsed)}
                   className="text-[16px] !w-[64px] !h-[64px]"
               />
-              <Button className="mr-8" onClick={() => navigate("/auth")}>Login</Button>
+              <Button className="mr-8 border-none !bg-[#53dfdb] !text-white font-bold rounded-lg duration-400 active:scale-95" onClick={() => navigate("/auth")}>Login</Button>
             </Header>
             <Content className="bg-white rounded-xl shadow-xl overflow-hidden m-4 min-h-screen p-4">
               <Outlet/>
